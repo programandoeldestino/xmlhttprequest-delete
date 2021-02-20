@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clase XMLHttpRequest</title>
+</head>
+<body>
+    <div id="usuarios"></div>
+
+    <script>
+        const divUsuarios = document.getElementById('usuarios');
+
+        function realizarPeticion(metodo, url, handleOk, handleError, datosExtra) {
+            const xhr = new XMLHttpRequest();
+            xhr.open(metodo, url);
+            xhr.responseType = 'json';
+
+            xhr.addEventListener('load', e => {
+                if (xhr.status >= 200 && xhr.status <= 299) {
+                    if (!datosExtra) {
+                        handleOk(xhr.response);
+                    } else {
+                        handleOk({ ...xhr.response, ...datosExtra });
+                    }
+                } else {
+                    handleError();
+                }
+            });
+
+            xhr.addEventListener('error', e => {
+                handleError();
+            });
+
+            xhr.send();
+        }
+
+        function eliminarUsuario(data) {
+            divUsuarios.removeChild(data.nodo)
+        }
+
+        divUsuarios.addEventListener('click', e => {
+            if (e.target.nodeName === 'BUTTON') {
+                if (e.target.classList.contains('eliminar')) {
+                    const id = e.target.parentNode.dataset.id;
+
+                    realizarPeticion(
+                        'delete',
+                        `https://jsonplaceholder.typicode.com/users/${id}`,
+                        eliminarUsuario,
+                        mostrarError,
+                        {
+                            nodo: e.target.parentNode
+                        }
+                    )
+                }
+            }
+        });
+
+        
+
+        function mostrarError() {
+            alert('Error');
+        }
+
+        function mostrarUsuario(usuarios) {
+            const fragmento = document.createDocumentFragment();
+            usuarios.forEach(u => {
+                const articulo = document.createElement('article');
+                articulo.dataset.id = u.id;
+
+                articulo.innerHTML = `
+                    <h2>${u.name}</h2>
+                    <button class="modificar">Modificar</button>
+                    <button class="eliminar">Eliminar</button>
+                `;
+
+                fragmento.appendChild(articulo);
+            })
+            divUsuarios.appendChild(fragmento);
+        }
+
+        realizarPeticion(
+            'get',
+            'https://jsonplaceholder.typicode.com/users',
+            mostrarUsuario,
+            mostrarError
+        );
+    </script>
+</body>
+</html>
